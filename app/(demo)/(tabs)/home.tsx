@@ -1,33 +1,47 @@
-// app/(tabs)/home.tsx
-import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
-import { Link } from 'expo-router';
+// app/(demo)/(tabs)/home.tsx
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 
 export default function HomeTab() {
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.content}>
+    <View style={styles.container}>
+      <ScrollView 
+        style={styles.scrollView}
+        contentContainerStyle={styles.content}
+      >
         <Text style={styles.title}>🏠 Home Tab</Text>
         <Text style={styles.subtitle}>
-          Welcome to the tab navigation demo
+          Custom floating tab bar design
         </Text>
 
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>What are Tabs?</Text>
+          <Text style={styles.cardTitle}>Floating Tab Bar</Text>
           <Text style={styles.cardText}>
-            Tab navigation allows users to quickly switch between different
-            sections of your app. It's perfect for apps with 3-5 main sections.
+            This tab bar floats above the content with a beautiful design,
+            rounded corners, and smooth shadows.
           </Text>
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Key Features</Text>
-          <Text style={styles.cardText}>• Easy navigation between screens</Text>
-          <Text style={styles.cardText}>• Persistent tab bar at the bottom</Text>
-          <Text style={styles.cardText}>• Icons and badges support</Text>
-          <Text style={styles.cardText}>• Customizable styling</Text>
+          <Text style={styles.cardTitle}>Features</Text>
+          <Text style={styles.cardText}>• Rounded, floating design</Text>
+          <Text style={styles.cardText}>• Beautiful shadows</Text>
+          <Text style={styles.cardText}>• Active state animations</Text>
+          <Text style={styles.cardText}>• iOS-style appearance</Text>
+          <Text style={styles.cardText}>• Smooth transitions</Text>
         </View>
-      </View>
-    </ScrollView>
+
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>No Dependencies</Text>
+          <Text style={styles.cardText}>
+            This custom tab bar doesn't require any additional packages!
+            It uses pure React Native components.
+          </Text>
+        </View>
+
+        {/* Add some space at bottom for tab bar */}
+        <View style={styles.bottomSpacer} />
+      </ScrollView>
+    </View>
   );
 }
 
@@ -35,6 +49,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
+  },
+  scrollView: {
+    flex: 1,
   },
   content: {
     padding: 20,
@@ -66,12 +83,15 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 10,
-    color: '#007AFF',
+    color: '#FF9500',
   },
   cardText: {
     fontSize: 16,
     color: '#333',
     lineHeight: 24,
     marginBottom: 5,
+  },
+  bottomSpacer: {
+    height: 100, // Space for floating tab bar
   },
 });

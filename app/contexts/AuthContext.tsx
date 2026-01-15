@@ -1,21 +1,72 @@
 // app/contexts/AuthContext.tsx
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter, useSegments } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-type AuthContextType = {
-  user: User | null;
-  signIn: (email: string, password: string) => Promise<void>;
-  signOut: () => void;
-  isLoading: boolean;
-};
+// Define user roles
+export enum UserRole {
+  GUEST = 'guest',
+  USER = 'user',
+  ADMIN = 'admin',
+  SUPER_ADMIN = 'super_admin',
+}
+
+// Define permissions
+export enum Permission {
+  VIEW_DASHBOARD = 'view_dashboard',
+  VIEW_PROFILE = 'view_profile',
+  EDIT_PROFILE = 'edit_profile',
+  VIEW_ADMIN = 'view_admin',
+  MANAGE_USERS = 'manage_users',
+  VIEW_ANALYTICS = 'view_analytics',
+  DELETE_CONTENT = 'delete_content',
+}
 
 type User = {
   id: string;
   email: string;
   name: string;
+  role: UserRole;
+  permissions: Permission[];
+};
+
+type AuthContextType = {
+  user: User | null;
+  signIn: (email: string, password: string, role?: UserRole) => Promise<void>;
+  signOut: () => void;
+  isLoading: boolean;
+  hasPermission: (permission: Permission) => boolean;
+  hasRole: (role: UserRole | UserRole[]) => boolean;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// Role-based permissions mapping
+const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
+  [UserRole.GUEST]: [],
+  [UserRole.USER]: [
+    Permission.VIEW_DASHBOARD,
+    Permission.VIEW_PROFILE,
+    Permission.EDIT_PROFILE,
+  ],
+  [UserRole.ADMIN]: [
+    Permission.VIEW_DASHBOARD,
+    Permission.VIEW_PROFILE,
+    Permission.EDIT_PROFILE,
+    Permission.VIEW_ADMIN,
+    Permission.MANAGE_USERS,
+    Permission.VIEW_ANALYTICS,
+  ],
+  [UserRole.SUPER_ADMIN]: [
+    Permission.VIEW_DASHBOARD,
+    Permission.VIEW_PROFILE,
+    Permission.EDIT_PROFILE,
+    Permission.VIEW_ADMIN,
+    Permission.MANAGE_USERS,
+    Permission.VIEW_ANALYTICS,
+    Permission.DELETE_CONTENT,
+  ],
+};
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -23,66 +74,84 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const segments = useSegments();
 
-  // Check if user is authenticated on mount
+  // Check stored auth on mount
   useEffect(() => {
-    // Simulate checking stored auth token
-    const checkAuth = async () => {
-      try {
-        // In real app: check AsyncStorage for token
-        // const token = await AsyncStorage.getItem('authToken');
-        // if (token) { setUser(decodedUser); }
-        
-        // For demo: check if user exists in state
-        setIsLoading(false);
-      } catch (error) {
-        console.error('Auth check failed:', error);
-        setIsLoading(false);
-      }
-    };
-
-    checkAuth();
+    checkStoredAuth();
   }, []);
 
-  // Protect routes based on authentication
+  // Route protection logic
   useEffect(() => {
     if (isLoading) return;
 
     const inAuthGroup = segments[0] === '(auth)';
     const inProtectedGroup = segments[0] === '(protected)';
+    const inAdminGroup = segments[0] === '(admin)';
 
-    if (!user && inProtectedGroup) {
-      // Redirect to sign in if trying to access protected route
+    if (!user && (inProtectedGroup || inAdminGroup)) {
+      // Redirect to sign in if trying to access protected routes
       router.replace('/(auth)/sign-in');
     } else if (user && inAuthGroup) {
-      // Redirect to home if already signed in
-      router.replace('/(protected)/home');
+      // Redirect to appropriate home based on role
+      if (user.role === UserRole.ADMIN || user.role === UserRole.SUPER_ADMIN) {
+        router.replace('/(admin)/dashboard');
+      } else {
+        router.replace('/(protected)/home');
+      }
+    } else if (user && inAdminGroup) {
+      // Check if user has admin access
+      if (user.role !== UserRole.ADMIN && user.role !== UserRole.SUPER_ADMIN) {
+        router.replace('/(protected)/home');
+      }
     }
   }, [user, segments, isLoading]);
 
-  const signIn = async (email: string, password: string) => {
+  const checkStoredAuth = async () => {
+    try {
+      const storedUser = await AsyncStorage.getItem('user');
+      const storedToken = await AsyncStorage.getItem('authToken');
+      
+      if (storedUser && storedToken) {
+        const parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser);
+      }
+    } catch (error) {
+      console.error('Error checking stored auth:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const signIn = async (email: string, password: string, role: UserRole = UserRole.USER) => {
     try {
       setIsLoading(true);
       
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // In real app: call your API
-      // const response = await fetch('/api/login', { ... });
-      // const data = await response.json();
+      // Get permissions based on role
+      const permissions = ROLE_PERMISSIONS[role];
       
       // Mock user data
       const mockUser: User = {
-        id: '1',
+        id: Math.random().toString(),
         email: email,
-        name: 'John Doe',
+        name: email.split('@')[0],
+        role: role,
+        permissions: permissions,
       };
+      
+      // Store auth data
+      await AsyncStorage.setItem('user', JSON.stringify(mockUser));
+      await AsyncStorage.setItem('authToken', 'mock-jwt-token-' + Date.now());
       
       setUser(mockUser);
       
-      // In real app: store token
-      // await AsyncStorage.setItem('authToken', token);
-      
-      router.replace('/(protected)/home');
+      // Navigate based on role
+      if (role === UserRole.ADMIN || role === UserRole.SUPER_ADMIN) {
+        router.replace('/(admin)/dashboard');
+      } else {
+        router.replace('/(protected)/home');
+      }
     } catch (error) {
       console.error('Sign in failed:', error);
       throw error;
@@ -93,19 +162,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     try {
+      // Clear stored data
+      await AsyncStorage.removeItem('user');
+      await AsyncStorage.removeItem('authToken');
+      
       setUser(null);
-      
-      // In real app: clear token
-      // await AsyncStorage.removeItem('authToken');
-      
       router.replace('/(auth)/sign-in');
     } catch (error) {
       console.error('Sign out failed:', error);
     }
   };
 
+  const hasPermission = (permission: Permission): boolean => {
+    if (!user) return false;
+    return user.permissions.includes(permission);
+  };
+
+  const hasRole = (role: UserRole | UserRole[]): boolean => {
+    if (!user) return false;
+    if (Array.isArray(role)) {
+      return role.includes(user.role);
+    }
+    return user.role === role;
+  };
+
   return (
-    <AuthContext.Provider value={{ user, signIn, signOut, isLoading }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      signIn, 
+      signOut, 
+      isLoading, 
+      hasPermission, 
+      hasRole 
+    }}>
       {children}
     </AuthContext.Provider>
   );
