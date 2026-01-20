@@ -2,7 +2,7 @@
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { Link } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from "@/app/contexts/AuthContext"
+import { useAuth } from "@/contexts/AuthContext"
 
 export default function ProtectedHomeScreen() {
   const { user } = useAuth();

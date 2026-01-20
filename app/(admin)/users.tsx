@@ -1,6 +1,6 @@
 // app/(admin)/users.tsx
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
-import { useAuth, Permission } from '../contexts/AuthContext';
+import { useAuth, Permission } from '../../contexts/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 

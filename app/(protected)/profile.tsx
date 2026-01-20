@@ -1,6 +1,6 @@
 // app/(protected)/profile.tsx
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function ProtectedProfileScreen() {

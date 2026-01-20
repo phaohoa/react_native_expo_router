@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState } from 'react';
 import { Link, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth, UserRole } from '../contexts/AuthContext';
+import { useAuth, UserRole } from '../../contexts/AuthContext';
 
 export default function SignInScreen() {
   const [email, setEmail] = useState('');

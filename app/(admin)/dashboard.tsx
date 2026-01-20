@@ -1,7 +1,7 @@
 // app/(admin)/dashboard.tsx
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { Link } from 'expo-router';
-import { useAuth, UserRole, Permission } from '../contexts/AuthContext';
+import { useAuth, UserRole, Permission } from '../../contexts/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function AdminDashboardScreen() {
